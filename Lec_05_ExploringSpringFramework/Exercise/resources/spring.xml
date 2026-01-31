@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!--- Beans are objects that are managed by Spring Framework-->
+    <!-- Here we have to specify the bean name because it will be search by this name and where is this class located in the code-->
+    <bean id="alien" class="Alien">
+        <!-- specifying the names of the data-member so that Spring doesnt throw exception -->
+        <constructor-arg name="age" value="21"/>
+        <constructor-arg name="com" ref="desktop"/>
+        <!-- if the names are not specified, the constructor-args shall be in the same sequence with the constructor line-->
+    </bean>
+
+    <bean id="laptop" class="model.Laptop"> </bean>
+    <bean id="desktop" class="model.Desktop"> </bean>
+
+</beans>

@@ -1,0 +1,137 @@
+* Creating the IoC Container for ClassPathXML
+
+    Когато не работим със Spring Boot, ние сме задължени само да прави конфигурацията си за Spring Framework и едно нещо, за което трябва да се грижим е (Spring IoC)
+
+    Понеже ще работим със XML конфигурация, Spring ще търси xml файл с дефинирани всичко класове (beans) с които нашият контейнер ще работи 
+    # Bean e oбект, който се създава, конфигурира и управлява от Spring IoC контейнера.
+
+    Ако работим на Maven/Gradle система, този xml файл трябва да се намира в main/resources директорията 
+
+    Когато имам дефиниран xml файл, с който Spring може да работи може да създадем IoC контайнера с този код:
+    - ApplicationContext applicationContext = ClassPathXMLApplicationContext("spring.xml");
+    # Не е нужно да се казва spring.xml, за пример е посочено така 
+    Важно: Когато създадеш този applicationContext, Spring прочита дефиницията за всичките beans и ги създава в IoC контейнера  
+
+
+* Registering a Bean in the xml file 
+
+    Както споменахме от този файл Spring ще разбера за кой файлове ще трябва да се грижи да бъдат във IoC контейнера 
+
+    Преди да почнем да пишем нещо във xml файла трябва той да има XSD (XML Scheme definition) definition, това е стандарно заглавие, което може да се изтегли от интернета 
+
+    За да може Spring да управлява даден клас, той трябва да е споменат като Bean, а това става като са дефинирани таговете <bean> и има два аттрибута:
+    - name, това е уникалният индентификатор и името, по което ще го викаме
+    - class, това е пълният път до съответния клас, тук Spring използва Java Reflections, за да създаде инстанция на класа по неговото име
+    # Пример <bean name="Alien" class="com.spaceship.Alien">
+
+* Singleton Scopre vs Prototype Scope 
+
+    Spring Framework предоставя два различни bean scopes:
+    - Singleton
+    - Prototype
+
+    (Singleton Scope)
+    Когато един bean е дефиниран чрез scope="singleton", това подсказва на IoC, че този клас трябва да има една единствена споделена инстанция
+    # Ако два обекта в Java достъпят един и същи bean definition, те ще държат една и съща референция към този обект и промените от едната ще се виждат в другата
+    Ако искаме даден bean да бъде с singleton scope можем само да дефинираме bean-a, защото singleton scope е by default
+
+    (Prototype Scope)
+    Когато един bean е дефиниран чрез scope="prototype", това подсказва на IoC, че този клас трябва да има нова инстанция, всеки път като се достъпва този bean
+    # Така два различни обекта в Java ще сочат към две различнхи инстанции взети от IoC контейнера 
+    Ако искаме даден Bean да бъде с prototype scope трябва да се попълни към bean дефиницията scope="prototype", пример:
+    - <bean name="bean" class="Bean" scope="prototype">
+
+    Важно: Когато даден bean е с singleton scope, още при четенетона на xml файлча чрез ClassPathXMLApplicationContext, IoC ще инициализира bean-a 
+
+* Loading the bean into the IoC 
+
+    Когато сме заредили даден файл във xml, Spring ще създаде този клас в контейнера, а когато извикаме:
+    - applicationContext.getBean("alien"), няма да се създаде нов обект чрез new, а ще се извиква този обект от контейнера 
+    # Note: Не забравяй, ако направиш втори обект Alien той ще сочи към същата инстанция, ако искаш да има различни инстанции на един клас трябва да напишеш scope="prototype" в xml дефиницията на Bean-a 
+
+* Setter Injection
+
+    Setter Injection е процес, при койтo Spring присвоява стойности на един bean използвайки setter-ите на Java класа веднага след като го инстанцира 
+
+    Как би изглеждало това при дефинирането на bean-a в xml-ла:
+    <bean id="alien1" class="com.example.Alien">
+        <property name="age" value="21" />
+    </bean>
+
+* Ref Injection 
+
+    Ref Injection е процес, при който Spring присвоява на един клас неговата зависимост, използвайки отново setter-ире на Javа класа веднага да го инстанцира 
+
+    За да може да се случи този injection трябва да се случат две неща, зависимостта, която има класа трябва да:
+    - има setter в Java класа, за да може да се сложи съответното depedency
+    - този клас, който реално ще бъде dependency, трябва да е дефиниран като Bean в IoC 
+
+    Как можем да дефинираме един такъв bean в xml:
+    <bean id="alien" class="com.example.Alien">
+        <property name="age value="21"/>
+        <property name="laptop" ref="lap"/>
+    </bean>
+    # в ref трябва да се спомене id-то, с което е създадено като Bean съответното dependecy 
+
+* Constructor Injection 
+
+    Constructor Injection е начин, чрез който Spring създава обекта в IoC, използвайки конструктура му и дефиниция в xml файла 
+
+    Можем да дефинираме един constructor injection в xml файла по няколко начина:
+    - чрез тип
+    - чрез индекс
+    - чрез име на data-member
+    # Реда на аргументите, подаден към xml дефиницията, трябва да бъде същия като ред на параметрите в конструктора
+
+    (Чрез тип)
+    Нека да имаме клас А със data members: private int num, private B object, където B е dependency, чрез тип дефиницията ще изглежда така:
+    <constructor-arg value="21" type="int"/>
+    <constructor-arg value="object" type="B"/>
+    # Важно: Клас B също трябва да е деклариран като bean в xml файла
+
+    (Чрез индекс)
+    Нека да имаме клас А със data members: private int num, private B object, където B е dependency, чрез тип дефиницията ще изглежда така:
+    <constructor-arg value="21" index="0"/>
+    <constructor-arg value="object" index="1"/>
+    # Важно: Клас B също трябва да е деклариран като bean в xml файла
+
+    (Чрез име)
+    Нека да имаме клас А със data members: private int num, private B object, където B е dependency, чрез тип дефиницията ще изглежда така:
+    <constructor-arg value="21" name="num"/>
+    <constructor-arg value="object" name="object"/>
+    # Важно: Клас B също трябва да е деклариран като bean в xml файла
+    # Над конструктора трябва да има анотацията @ConstructorProperties({"num", "object"}), за да опише какви имена трябва да се очакват в xml файла 
+
+    Какво се случва, ако имаме няколко конструктура:
+    - Spring вижда дефиницията в xml файла и сам съпоставя кой конструктор трябва да извика 
+
+* Autowiring
+
+    Това позволява нa Spring автоматично да ижентира зависимости в класовете, без да се налага да се прави ръчна смяна в конфигурацията 
+
+    Типът на autowire-a се пише в дефиницията на bean-a като допълнително поле, примерно:
+    - <bean id="Class" class="com.google.Class" autowire="byType">
+
+    Има няколко различни начина, по който можем да посочим на Spring как да направи autowiring:
+    - byNamе: Spring търси във Bean конфигурацията ID на bean, който да съвпада точно с името на data member в този клас
+    # Лесно е за разбиране, но ако се промени Id или името на някой data member, може да се счупи програмата
+    - byType: Spring не се интересува от името на обекта, а търси подходящ подходящ клас
+    # Spring автоматично търси подходяща зависимост, но ако има няколко класа който могат да се inject-нат в класа, може да се хвърли exception
+    
+    По принцип ръчното конфигуриране винаги е по-добре, за да се предотвратят проблеми
+    # Ако примерно един Bean е настроен за autowire, но и има дефиниран propery name, който свърза зависимостта, Spring ще го игнорира и ще използва това което е написано ръчно
+
+    Ако примерно имаме един клас, който има зависимост от интерфейс, но този интерфейс има няколко имплементации, при Bean дефиницията можем да посочим, кой bean да се взима при autowiring:
+    - <bean id="dependency" class="com.handling.interface" primary=true>
+
+* Lazy Init Bean 
+
+    Когато се създаде нов ClassPathXMLApplicationContext, Spring автоматично зарежда всеки един Bean в IoC контейнера, но lazy init bean ни позволява той да се инициазлира само когато ние го ползваме в runtime 
+    Пример: <bean id="Bean" class="Bean" lazy-init="true"/>
+
+* Inner Beans 
+
+    Позволява дефинирането на bean в дефиницията на един bean, аналогично на Private data member в Java това може да лимитира достъпа до този bean
+
+    Хубаво е да се ползва, когато един клас има една зависимост и ние директно създаваме и инжектираме нужният bean за класа 
+
